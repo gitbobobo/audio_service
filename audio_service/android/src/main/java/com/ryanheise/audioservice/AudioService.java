@@ -60,6 +60,8 @@ public class AudioService extends MediaBrowserServiceCompat {
 
     private static final int NOTIFICATION_ID = 1124;
     private static final int REQUEST_CONTENT_INTENT = 1000;
+    private static final int FLAG_ALWAYS_SHOW_TICKER = 0x1000000;
+    private static final int FLAG_ONLY_UPDATE_TICKER = 0x2000000;
     public static final String NOTIFICATION_CLICK_ACTION = "com.ryanheise.audioservice.NOTIFICATION_CLICK";
     public static final String CUSTOM_ACTION_STOP = "com.ryanheise.audioservice.action.STOP";
     public static final String CUSTOM_ACTION_FAST_FORWARD = "com.ryanheise.audioservice.action.FAST_FORWARD";
@@ -636,6 +638,12 @@ public class AudioService extends MediaBrowserServiceCompat {
                 builder.setContentText(description.getSubtitle());
             if (description.getDescription() != null)
                 builder.setSubText(description.getDescription());
+            // 支持魅族状态栏歌词
+            if (mediaMetadata.getString("current_lyrics") == null) {
+                builder.setTicker(null);
+            } else {
+                builder.setTicker(mediaMetadata.getString("current_lyrics"));
+            }
             synchronized (this) {
                 if (artBitmap != null)
                     builder.setLargeIcon(artBitmap);
@@ -660,7 +668,16 @@ public class AudioService extends MediaBrowserServiceCompat {
             builder.setOngoing(true);
         }
         builder.setStyle(style);
-        return builder.build();
+        Notification notification = builder.build();
+        // 设置图标后只显示了一个图标，图标太大导致的？？
+        // 状态栏歌词前的小图标，建议大小 16x16 dp
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+//            int iconId = getResourceId(config.androidNotificationIcon);
+//            notification.extras.putInt("ticker_icon", iconId);
+//            notification.extras.putBoolean("ticker_icon_switch", false);
+//        }
+        notification.flags |= FLAG_ALWAYS_SHOW_TICKER | FLAG_ONLY_UPDATE_TICKER;
+        return notification;
     }
 
     private NotificationManager getNotificationManager() {
