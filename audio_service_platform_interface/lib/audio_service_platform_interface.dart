@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:audio_service_platform_interface/no_op_audio_service.dart';
+import 'package:audio_service_platform_interface/smtc_audio_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:meta/meta.dart';
@@ -17,7 +18,7 @@ abstract class AudioServicePlatform extends PlatformInterface {
 
   static AudioServicePlatform _instance =
       (!kIsWeb && (Platform.isWindows || Platform.isLinux))
-          ? NoOpAudioService()
+          ? (Platform.isWindows ? SMTCAudioService() : NoOpAudioService())
           : MethodChannelAudioService();
 
   /// The default instance of [AudioServicePlatform] to use.
