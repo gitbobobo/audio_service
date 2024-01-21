@@ -27,7 +27,7 @@ dependencies:
   audio_service_web:
     git:
       url: https://github.com/gitbobobo/audio_service.git
-      ref: one-statusbar_lyric
+      ref: statusbar_lyric
       path: audio_service_web
 
   # Use these deps when publishing.
