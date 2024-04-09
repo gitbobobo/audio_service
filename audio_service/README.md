@@ -1,6 +1,6 @@
 # audio_service
 
-This plugin wraps around your existing audio code to allow it to run in the background or with the screen turned off, and allows your app to interact with headset buttons, the Android lock screen and notification, iOS control center, wearables and Android Auto. It is suitable for:
+This plugin wraps around your existing audio code to allow it to run in the background and interact with the media notification, the lock screen, headset buttons, wearables and Android Auto. It supports Android, iOS, web and Linux (via [audio_service_mpris](https://pub.dev/packages/audio_service_mpris)). It is suitable for:
 
 * Music players
 * Text-to-speech readers
@@ -11,11 +11,11 @@ This plugin wraps around your existing audio code to allow it to run in the back
 
 ## How does this plugin work?
 
-You encapsulate your audio code in an audio handler which implements standard callbacks on Android, iOS and the web that allow it to respond to playback requests coming from your Flutter UI, headset buttons, the lock screen, notification, iOS control center, car displays and smart watches, even when the app is in the background:
+You encapsulate your audio code in an audio handler which implements a set of standard system callbacks to handle media playback requests from different sources in a uniform way:
 
 ![audio_handler](https://user-images.githubusercontent.com/19899190/100403242-762e7480-30b2-11eb-9fcf-938e08beee53.png)
 
-You can implement these callbacks to play any sort of audio that is appropriate for your app, such as music files or streams, audio assets, text to speech, synthesised audio, or combinations of these.
+You implement these callbacks to play the particular type of audio that your app needs to play in response to these requests. For example, a Text-to-speech reader app might implement these callbacks using [flutter_tts](https://pub.dartlang.org/packages/flutter_tts) to render the speech, while a music player app might implement these callbacks using [just_audio](https://pub.dartlang.org/packages/just_audio) to render the audio.
 
 | Feature                            | Android   | iOS     | macOS   | Web     |
 | -------                            | :-------: | :-----: | :-----: | :-----: |
@@ -41,12 +41,6 @@ If you'd like to help with any missing features, please join us on the [GitHub i
 * [Frequently Asked Questions](https://github.com/ryanheise/audio_service/wiki/FAQ)
 * [API documentation](https://pub.dev/documentation/audio_service/latest/audio_service/audio_service-library.html)
 
-## What's new in 0.18.0?
-
-0.18.0 removes the need for a background isolate, allowing simpler communication between your UI and audio logic and greater compatibility with plugins that don't support multiple isolates. It also comes with many other new features listed in the [CHANGELOG](https://pub.dev/packages/audio_service/changelog).
-
-Read the [Migration Guide](https://github.com/ryanheise/audio_service/wiki/Migration-Guide#0180) for instructions on how to update your code.
-
 ## Can I make use of other plugins within the audio handler?
 
 Yes! `audio_service` is designed to let you implement the audio logic however you want, using whatever plugins you want. You can use your favourite audio plugins such as [just_audio](https://pub.dartlang.org/packages/just_audio), [flutter_tts](https://pub.dartlang.org/packages/flutter_tts), and others, within your audio handler. There are also plugins like [just_audio_handlers](https://github.com/yringler/inside-app/tree/master/just_audio_handlers) that provide default implementations of `AudioHandler` to make your job easier.
@@ -63,16 +57,15 @@ Define your `AudioHandler` with the callbacks that you want your app to handle:
 class MyAudioHandler extends BaseAudioHandler
     with QueueHandler, // mix in default queue callback implementations
     SeekHandler { // mix in default seek callback implementations
+
+  final _player = AudioPlayer(); // e.g. just_audio
   
   // The most common callbacks:
-  Future<void> play() async {
-    // All 'play' requests from all origins route to here. Implement this
-    // callback to start playing audio appropriate to your app. e.g. music.
-  }
-  Future<void> pause() async {}
-  Future<void> stop() async {}
-  Future<void> seek(Duration position) async {}
-  Future<void> skipToQueueItem(int i) async {}
+  Future<void> play() => _player.play();
+  Future<void> pause() => _player.pause();
+  Future<void> stop() => _player.stop();
+  Future<void> seek(Duration position) => _player.seek(position);
+  Future<void> skipToQueueItem(int i) => _player.seek(Duration.zero, index: i);
 }
 ```
 
@@ -313,10 +306,6 @@ Note: If your app uses a number of different audio plugins, e.g. for audio recor
 
 ## Android setup
 
-These instructions assume that your project follows the Flutter 1.12 project template or later. If your project was created prior to 1.12 and uses the old project structure, you can update your project to follow the [new project template](https://github.com/flutter/flutter/wiki/Upgrading-pre-1.12-Android-projects).
-
-Additionally:
-
 1. Make the following changes to your project's `AndroidManifest.xml` file:
 
 ```xml
@@ -324,6 +313,8 @@ Additionally:
   <!-- ADD THESE TWO PERMISSIONS -->
   <uses-permission android:name="android.permission.WAKE_LOCK"/>
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+  <!-- ALSO ADD THIS PERMISSION IF TARGETING SDK 34 -->
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
   
   <application ...>
     
@@ -354,7 +345,7 @@ Additionally:
 </manifest>
 ```
 
-Note: when targeting Android 12 or above, you must set `android:exported` on each component that has an intent filter (the main activity, the service and the receiver). If the manifest merging process causes `"Instantiable"` lint warnings, use `tools:ignore="Instantiable"` (as above) to suppress them.
+Note: As of Android 12, an app must have permission to restart a foreground service in the background, otherwise a `ForegroundServiceStartNotAllowedException` will be thrown. To avoid such an exception, you can either set `androidStopForegroundOnPause` to `false` in your `AudioServiceConfig` which keeps the service in the foreground during a pause so that restarting the foreground service is unnecessary, or you can keep the default `androidStopForegroundOnPause` setting of `true` (in line with best practices) and request the user to turn of battery optimisation for your app via the [optimize_battery](https://pub.dev/packages/optimize_battery) package. For more information, read [this page](https://developer.android.com/training/monitoring-device-state/doze-standby#support_for_other_use_cases).
 
 2. If you use any custom icons in notification, create the file `android/app/src/main/res/raw/keep.xml` to prevent them from being stripped during the build process:
 
