@@ -112,9 +112,13 @@ public class AudioService extends MediaBrowserServiceCompat {
     }
 
     public static int toKeyCode(long action) {
-        if (action == PlaybackStateCompat.ACTION_PLAY) {
-            return KEYCODE_BYPASS_PLAY;
-        } else if (action == PlaybackStateCompat.ACTION_PAUSE) {
+        // 使用自定义码值会导致前台服务停止时无法收到通知栏点击事件（部分国产系统）
+        // 使用自定义码值是为了区分通知栏播放按钮和媒体按键的点击事件
+        // 但区分之后的具体作用还不清楚，暂时改回系统码值
+//        if (action == PlaybackStateCompat.ACTION_PLAY) {
+//            return KEYCODE_BYPASS_PLAY;
+//        } else
+        if (action == PlaybackStateCompat.ACTION_PAUSE) {
             return KEYCODE_BYPASS_PAUSE;
         } else {
             return PlaybackStateCompat.toKeyCode(action);
