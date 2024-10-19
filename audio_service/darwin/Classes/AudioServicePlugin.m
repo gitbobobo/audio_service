@@ -131,7 +131,7 @@ static NSMutableDictionary *nowPlayingInfo = nil;
     [commandCenter.ratingCommand setEnabled:NO];
     // Feedback
     // [commandCenter.likeCommand setEnabled:NO];
-    // [commandCenter.dislikeCommand setEnabled:NO];
+    [commandCenter.dislikeCommand setEnabled:NO];
     [commandCenter.bookmarkCommand setEnabled:NO];
 }
 
