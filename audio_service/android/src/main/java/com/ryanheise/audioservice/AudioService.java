@@ -898,6 +898,10 @@ public class AudioService extends MediaBrowserServiceCompat {
     }
 
     public class MediaSessionCallback extends MediaSessionCompat.Callback {
+        private static final long CLICK_TIMEOUT = 500; // 超时时间
+        private int headSetHookClickCount = 0;
+        private long lastHeadSetHookClickTime = 0;
+
         @Override
         public void onAddQueueItem(MediaDescriptionCompat description) {
             if (listener == null) return;
@@ -1009,12 +1013,34 @@ public class AudioService extends MediaBrowserServiceCompat {
                 case KeyEvent.KEYCODE_MEDIA_PAUSE:
                     // These are the "genuine" media button click events
                 case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
-                case KeyEvent.KEYCODE_HEADSETHOOK:
                     listener.onClick(eventToButton(event));
+                    break;
+                case KeyEvent.KEYCODE_HEADSETHOOK:
+                    long currentTime = System.currentTimeMillis();
+                    if (currentTime - lastHeadSetHookClickTime < CLICK_TIMEOUT) {
+                        headSetHookClickCount++;
+                    } else {
+                        headSetHookClickCount = 1;
+                    }
+                    lastHeadSetHookClickTime = currentTime;
+                    resetHeadSetHookClickCount();
                     break;
                 }
             }
             return true;
+        }
+
+        private void resetHeadSetHookClickCount() {
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                if (headSetHookClickCount == 1) {
+                    listener.onClick(MediaButton.media);
+                } else if (headSetHookClickCount == 2) {
+                    listener.onSkipToNext();
+                } else if (headSetHookClickCount == 3) {
+                    listener.onSkipToPrevious();
+                }
+                headSetHookClickCount = 0;
+            }, CLICK_TIMEOUT);
         }
 
         private MediaButton eventToButton(KeyEvent event) {
