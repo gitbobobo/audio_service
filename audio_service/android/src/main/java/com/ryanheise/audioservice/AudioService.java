@@ -1012,9 +1012,9 @@ public class AudioService extends MediaBrowserServiceCompat {
                 case KeyEvent.KEYCODE_MEDIA_PLAY:
                 case KeyEvent.KEYCODE_MEDIA_PAUSE:
                     // These are the "genuine" media button click events
-                case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
                     listener.onClick(eventToButton(event));
                     break;
+                case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
                 case KeyEvent.KEYCODE_HEADSETHOOK:
                     long currentTime = System.currentTimeMillis();
                     if (currentTime - lastHeadSetHookClickTime < CLICK_TIMEOUT) {
