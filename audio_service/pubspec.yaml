@@ -32,7 +32,7 @@ dependencies:
   audio_session:
     git:
       url: https://github.com/gitbobobo/audio_session.git
-      ref: one_instance
+      ref: "354a5af"
 
   # Use these deps when publishing.
   # audio_service_platform_interface: ^0.1.1

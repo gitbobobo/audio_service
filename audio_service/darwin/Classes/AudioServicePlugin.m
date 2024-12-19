@@ -35,9 +35,9 @@ static NSMutableDictionary *nowPlayingInfo = nil;
 
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
     @synchronized(self) {
-        // if (!plugins) {
+        if (!plugins) {
             plugins = [NSHashTable weakObjectsHashTable];
-        // }
+        }
         AudioServicePlugin *instance = [[AudioServicePlugin alloc] initWithRegistrar:registrar];
         [registrar addMethodCallDelegate:instance channel:instance.channel];
         [plugins addObject:instance];
